@@ -1,0 +1,24 @@
+name = "QPSScanFormat"
+uuid = "be28e0f9-8e2f-4b98-9124-ee1c250d40da"
+authors = ["Garrek Stemo <garrekstemo@icloud.com>"]
+version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
+SpectroscopyTools = "f1436f7a-66ba-4269-a153-8996db8f0853"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+
+[sources]
+SpectroscopyTools = {url = "https://github.com/garrekstemo/SpectroscopyTools.jl"}
+
+[compat]
+HDF5 = "0.17"
+julia = "1.11"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Test"]
