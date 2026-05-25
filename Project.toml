@@ -10,7 +10,9 @@ SpectroscopyTools = "f1436f7a-66ba-4269-a153-8996db8f0853"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [sources]
-SpectroscopyTools = {url = "https://github.com/garrekstemo/SpectroscopyTools.jl"}
+# TEMPORARY: point at feat/sweepdata until PR garrekstemo/SpectroscopyTools.jl#31
+# merges. Swap back to bare `url = ...` (i.e. tracking main) after merge.
+SpectroscopyTools = {url = "https://github.com/garrekstemo/SpectroscopyTools.jl", rev = "feat/sweepdata"}
 
 [compat]
 HDF5 = "0.17"
