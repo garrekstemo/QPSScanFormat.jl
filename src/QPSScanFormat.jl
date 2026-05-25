@@ -3,7 +3,7 @@ module QPSScanFormat
 using Dates
 using HDF5
 using Statistics
-using SpectroscopyTools
+using OpticalSpectroscopy
 
 include("schema.jl")
 include("types.jl")

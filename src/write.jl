@@ -118,7 +118,7 @@ end
     save_noise_scan(path; kwargs...)
 
 Save a noise characterization result. Takes the raw vectors and statistics
-dict directly — there's no SpectroscopyTools type for this since it's
+dict directly — there's no OpticalSpectroscopy type for this since it's
 not a spectroscopy product.
 
 # Keyword arguments

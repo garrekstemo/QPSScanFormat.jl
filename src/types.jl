@@ -1,6 +1,6 @@
 # Loaded result types returned by `load_scan`.
 #
-# These wrap SpectroscopyTools data types with scan-output metadata that
+# These wrap OpticalSpectroscopy data types with scan-output metadata that
 # `LoadedNoiseResult`. We can't reconstruct live instrument refs from a
 # file, so instrument_state and scan_params are held as Dicts.
 

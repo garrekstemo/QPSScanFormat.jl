@@ -1,7 +1,7 @@
 using Test
 using Dates
 using HDF5
-using SpectroscopyTools
+using OpticalSpectroscopy
 using QPSScanFormat
 
 # Helpers for building fixtures

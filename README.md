@@ -11,14 +11,14 @@ results produced by QPSDrive / QPSConsole. It owns:
 - Schema constants (`FORMAT_VERSION`, attribute and group names)
 
 It deliberately depends only on `HDF5`, `Dates`, `Statistics`, and
-`SpectroscopyTools` (for `TATrace`, `TASpectrum`, `TAMatrix`, `SweepData`).
+`OpticalSpectroscopy` (for `TATrace`, `TASpectrum`, `TAMatrix`, `SweepData`).
 No instrument drivers, no PyCall, no Makie — so analysis users at any laptop
 can install it without lab-only dependencies.
 
 ## Position in the ecosystem
 
 ```
-SpectroscopyTools (pure data types)
+OpticalSpectroscopy (pure data types)
     │
     └── QPSScanFormat (schema + read + write + Loaded* types)
            │
