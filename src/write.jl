@@ -183,6 +183,15 @@ and optional `delay_ps::Float64`.
 `(trace::TATrace, sweeps::Union{SweepData,Nothing}, description::String,
 comment::String, timestamp::DateTime, duration_seconds::Float64)`
 and optional `wavelength_nm::Float64`.
+
+!!! note "Per-sub-scan metadata"
+    Only the canonical `delay_ps` (spectra) and `wavelength_nm` (kinetics)
+    attributes are persisted on each sub-scan group. Any other metadata keys
+    a producer may have on a sub-scan (e.g. `spectrum_index`, free-form user
+    metadata) are not currently written. The QPSDrive composite reader did
+    not surface those keys either, so today this is a no-op narrowing, but
+    if future producers add semantically meaningful sub-scan metadata, this
+    writer needs a `metadata::Dict{String,Any}` field on each NamedTuple.
 """
 function save_composite_scan(path::AbstractString;
                              spectra::AbstractVector = (),
