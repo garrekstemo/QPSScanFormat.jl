@@ -10,10 +10,7 @@ OpticalSpectroscopy = "f1436f7a-66ba-4269-a153-8996db8f0853"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [sources]
-# TEMPORARY: point at feat/sweepdata until the SweepData PR is re-targeted
-# and merged on the renamed repo (OpticalSpectroscopy, formerly
-# SpectroscopyTools — UUID preserved). Swap to bare `url = ...` after merge.
-OpticalSpectroscopy = {url = "https://github.com/garrekstemo/OpticalSpectroscopy.jl", rev = "feat/sweepdata"}
+OpticalSpectroscopy = {url = "https://github.com/garrekstemo/OpticalSpectroscopy.jl"}
 
 [compat]
 HDF5 = "0.17"
