@@ -184,6 +184,9 @@ and optional `delay_ps::Float64`.
 comment::String, timestamp::DateTime, duration_seconds::Float64)`
 and optional `wavelength_nm::Float64`.
 
+Either kwarg may be omitted, but at least one sub-scan must be supplied;
+passing both groups empty is an error (there would be nothing to save).
+
 !!! note "Per-sub-scan metadata"
     Only the canonical `delay_ps` (spectra) and `wavelength_nm` (kinetics)
     attributes are persisted on each sub-scan group. Any other metadata keys
@@ -194,8 +197,8 @@ and optional `wavelength_nm::Float64`.
     writer needs a `metadata::Dict{String,Any}` field on each NamedTuple.
 """
 function save_composite_scan(path::AbstractString;
-                             spectra::AbstractVector = (),
-                             kinetics::AbstractVector = (),
+                             spectra::AbstractVector = NamedTuple[],
+                             kinetics::AbstractVector = NamedTuple[],
                              scan_params::Dict{String,Any} = Dict{String,Any}(),
                              instrument_state::Dict{String,Any} = Dict{String,Any}(),
                              description::AbstractString = "",
@@ -203,6 +206,8 @@ function save_composite_scan(path::AbstractString;
                              timestamp::DateTime = now(),
                              duration_seconds::Real = 0.0)
     is_hdf5_path(path) || error("save_composite_scan: path must be .h5 or .hdf5; got $path")
+    isempty(spectra) && isempty(kinetics) &&
+        error("save_composite_scan: both `spectra` and `kinetics` are empty — nothing to save")
     tmp = path * ".tmp"
     h5open(tmp, "w") do fid
         _write_root_attrs!(fid, SCAN_TYPE_COMPOSITE, timestamp, description, comment, duration_seconds)

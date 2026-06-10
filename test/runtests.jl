@@ -220,6 +220,50 @@ end
         end
     end
 
+    @testset "composite with only one sub-scan kind" begin
+        ts = now()
+
+        mktempdir() do dir
+            # Only kinetics (spectra kwarg omitted)
+            trace = _mock_trace(6)
+            kpath = joinpath(dir, "kinetics_only.h5")
+            save_composite_scan(kpath;
+                kinetics = [
+                    (trace=trace, sweeps=_mock_sweeps(6, 2),
+                     description="k only", comment="", timestamp=ts,
+                     duration_seconds=1.0),
+                ])
+            rk = load_scan(kpath)
+            @test rk isa LoadedCompositeResult
+            @test length(rk.traces) == 1
+            @test isempty(rk.spectra)
+
+            # Only spectra (kinetics kwarg omitted)
+            spec, wl = _mock_spectrum(6)
+            spath = joinpath(dir, "spectra_only.h5")
+            save_composite_scan(spath;
+                spectra = [
+                    (spectrum=spec, wavelengths=wl, sweeps=nothing,
+                     description="s only", comment="", timestamp=ts,
+                     duration_seconds=1.0),
+                ])
+            rs = load_scan(spath)
+            @test rs isa LoadedCompositeResult
+            @test length(rs.spectra) == 1
+            @test isempty(rs.traces)
+
+            # Both empty is a clear error, not a useless file
+            err = try
+                save_composite_scan(joinpath(dir, "empty.h5"))
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin("spectra", err.msg) && occursin("kinetics", err.msg)
+        end
+    end
+
     @testset "legacy scan_type='spectral' reads as spectrum" begin
         # Hand-build a file with the legacy attribute value
         spec, wl = _mock_spectrum(5)
