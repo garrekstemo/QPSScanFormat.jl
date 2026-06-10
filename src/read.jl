@@ -13,6 +13,7 @@ based on the `scan_type` root attribute.
 """
 function load_scan(path::AbstractString)
     h5open(String(path), "r") do fid
+        _check_format_version(fid, path)
         scan_type = read(attributes(fid)[ATTR_SCAN_TYPE])
         if scan_type == SCAN_TYPE_KINETIC
             return _load_kinetic(fid)

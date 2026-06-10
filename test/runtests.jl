@@ -283,6 +283,67 @@ end
         end
     end
 
+    @testset "format version validation" begin
+        trace = _mock_trace(5)
+
+        # Helper: save a valid kinetic file, then overwrite its format tag
+        function _with_format_tag(dir, tag)
+            path = joinpath(dir, "tagged.h5")
+            save_kinetic_scan(trace, path; description = "tagged")
+            h5open(path, "r+") do fid
+                delete_attribute(fid, "format")
+                attributes(fid)["format"] = tag
+            end
+            path
+        end
+
+        mktempdir() do dir
+            # (a) Future MAJOR version: informative error naming both versions
+            path = _with_format_tag(dir, "QPSDrive/2.0")
+            err = try
+                load_scan(path)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin("2.0", err.msg)          # the file's version
+            @test occursin("QPSDrive/1.0", err.msg) # what this reader supports
+
+            # (b) Same-major future MINOR version: loads, but warns
+            path = _with_format_tag(dir, "QPSDrive/1.99")
+            r = @test_logs (:warn, r"newer") match_mode=:any load_scan(path)
+            @test r isa LoadedScanResult
+            @test r.trace.signal ≈ trace.signal
+
+            # (c) Missing format attribute (non-QPSScanFormat HDF5 file):
+            # informative error, not a raw KeyError
+            alien = joinpath(dir, "alien.h5")
+            h5open(alien, "w") do fid
+                fid["unrelated"] = [1.0, 2.0, 3.0]
+            end
+            err = try
+                load_scan(alien)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin("format", err.msg)
+
+            # (d) Unparseable format tag: informative error too
+            path = _with_format_tag(dir, "SomeOtherTool/3.1")
+            err = try
+                load_scan(path)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin("SomeOtherTool/3.1", err.msg)
+        end
+    end
+
     @testset "update_scan_description! / update_scan_comment! / update_scan_sample_name!" begin
         trace = _mock_trace(5)
         mktempdir() do dir
