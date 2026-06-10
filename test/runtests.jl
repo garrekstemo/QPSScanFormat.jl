@@ -1,28 +1,29 @@
 using Test
 using Dates
 using HDF5
-using OpticalSpectroscopy
 using QPSScanFormat
 
-# Helpers for building fixtures
+# Helpers for building fixtures. Writers are duck-typed: any object with
+# the right fields works (NamedTuples here; OpticalSpectroscopy's
+# TATrace/TASpectrum/TAMatrix/SweepData in QPSDrive).
 function _mock_trace(npts=10)
     time_ps = collect(range(-1.0, 5.0; length=npts))
     signal = sin.(time_ps)
-    TATrace(time_ps, signal)
+    (time = time_ps, signal = signal)
 end
 
 function _mock_spectrum(npts=8)
     wl = collect(range(2000.0, 2200.0; length=npts))  # nm
     wn = QPSScanFormat.wl_to_wn.(wl)
     signal = randn(npts)
-    TASpectrum(wn, signal), wl
+    (wavenumber = wn, signal = signal), wl
 end
 
 function _mock_sweeps(n_points=10, n_sweeps=3)
     X = randn(n_points, n_sweeps)
     Y = randn(n_points, n_sweeps)
     DC = ones(n_points, n_sweeps)
-    SweepData(X, Y, DC)
+    (X = X, Y = Y, DC = DC)
 end
 
 @testset "QPSScanFormat" begin
@@ -63,8 +64,15 @@ end
             @test r.description == "test kinetic"
             @test r.comment == "first sweep looked clean"
             @test r.duration_seconds ≈ 42.5
+            # Plain-data contract: trace is a (time, signal) NamedTuple of
+            # Float64 vectors — no analysis types in the format layer.
+            @test r.trace isa NamedTuple{(:time, :signal)}
+            @test r.trace.time isa Vector{Float64}
+            @test r.trace.signal isa Vector{Float64}
             @test r.trace.time ≈ trace.time
-            @test r.sweeps isa SweepData
+            # Plain-data contract: sweeps is an (X, Y, DC) NamedTuple of matrices.
+            @test r.sweeps isa NamedTuple{(:X, :Y, :DC)}
+            @test r.sweeps.X isa Matrix{Float64}
             @test size(r.sweeps.X) == size(sweeps.X)
             @test r.sweeps.X ≈ sweeps.X
             @test r.scan_params["averages"] == 100
@@ -90,9 +98,13 @@ end
             r = load_scan(path)
             @test r isa LoadedSpectralResult
             @test r.wavelengths ≈ wl
+            # Plain-data contract: spectrum is a (wavenumber, signal) NamedTuple.
+            @test r.spectrum isa NamedTuple{(:wavenumber, :signal)}
+            @test r.spectrum.wavenumber isa Vector{Float64}
+            @test r.spectrum.signal isa Vector{Float64}
             @test r.spectrum.wavenumber ≈ QPSScanFormat.wl_to_wn.(wl)
             @test r.description == "test spectrum"
-            @test r.sweeps isa SweepData
+            @test r.sweeps isa NamedTuple{(:X, :Y, :DC)}
             @test r.scan_params["delay_ps"] ≈ 1.5
         end
     end
@@ -101,7 +113,7 @@ end
         time_ps = collect(range(-2.0, 10.0; length=5))
         wl_nm = collect(range(1900.0, 2100.0; length=4))
         data = randn(5, 4)
-        mat = TAMatrix(time_ps, wl_nm, data)
+        mat = (time = time_ps, wavelength = wl_nm, data = data)
 
         mktempdir() do dir
             path = joinpath(dir, "broadband.h5")
@@ -111,9 +123,12 @@ end
             )
 
             r = load_scan(path)
-            @test r isa TAMatrix
+            # Plain-data contract: broadband loads as a (time, wavelength, data)
+            # NamedTuple (formerly a bare OpticalSpectroscopy.TAMatrix).
+            @test r isa NamedTuple{(:time, :wavelength, :data)}
             @test r.time ≈ time_ps
             @test r.wavelength ≈ wl_nm
+            @test r.data isa Matrix{Float64}
             @test r.data ≈ data
         end
     end
@@ -186,6 +201,8 @@ end
             @test r isa LoadedCompositeResult
             @test length(r.spectra) == 2
             @test length(r.traces) == 1
+            @test r.spectra[1].spectrum isa NamedTuple{(:wavenumber, :signal)}
+            @test r.traces[1].trace isa NamedTuple{(:time, :signal)}
             @test r.spectra[1].scan_params["delay_ps"] ≈ 0.5
             @test r.spectra[2].scan_params["delay_ps"] ≈ 5.0
             @test r.spectra[1].scan_params["sub_path"] == "data/spectra/spectrum_001"
