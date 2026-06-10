@@ -344,6 +344,58 @@ end
         end
     end
 
+    @testset "corrupt and truncated files" begin
+        trace = _mock_trace(64)
+        sweeps = _mock_sweeps(64, 4)
+
+        mktempdir() do dir
+            # Truncated HDF5: keep only the first half of a valid file's bytes.
+            # load_scan must throw a catchable, informative ErrorException —
+            # not a segfault or a cryptic libhdf5 internal.
+            path = joinpath(dir, "good.h5")
+            save_kinetic_scan(trace, path; sweeps = sweeps, description = "whole")
+            bytes = read(path)
+            tpath = joinpath(dir, "truncated.h5")
+            write(tpath, bytes[1:div(length(bytes), 2)])
+
+            err = try
+                load_scan(tpath)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin(tpath, err.msg)
+            @test occursin("truncated or corrupt", err.msg)
+
+            # Missing required dataset: clear error naming the missing path
+            mpath = joinpath(dir, "missing_dataset.h5")
+            save_kinetic_scan(trace, mpath; sweeps = sweeps, description = "whole")
+            h5open(mpath, "r+") do fid
+                HDF5.delete_object(fid["data"], "time_ps")
+            end
+            err = try
+                load_scan(mpath)
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin(mpath, err.msg)
+            @test occursin("time_ps", err.msg)
+
+            # Nonexistent path: clear error, not an HDF5 open failure
+            err = try
+                load_scan(joinpath(dir, "does_not_exist.h5"))
+                nothing
+            catch e
+                e
+            end
+            @test err isa ErrorException
+            @test occursin("not found", err.msg)
+        end
+    end
+
     @testset "update_scan_description! / update_scan_comment! / update_scan_sample_name!" begin
         trace = _mock_trace(5)
         mktempdir() do dir

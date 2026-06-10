@@ -10,9 +10,20 @@
 
 Load a QPSDrive HDF5 scan file. Returns the appropriate Loaded type
 based on the `scan_type` root attribute.
+
+Raw HDF5 failures (truncated/corrupt file, missing datasets) are wrapped
+in informative `ErrorException`s naming the file, so callers can catch
+and report them without parsing libhdf5 internals.
 """
 function load_scan(path::AbstractString)
-    h5open(String(path), "r") do fid
+    isfile(path) || error("load_scan: file not found: $path")
+    fid = try
+        h5open(String(path), "r")
+    catch
+        error("load_scan: cannot open '$path' as an HDF5 file — " *
+              "it may be truncated or corrupt, or not an HDF5 file at all")
+    end
+    try
         _check_format_version(fid, path)
         scan_type = read(attributes(fid)[ATTR_SCAN_TYPE])
         if scan_type == SCAN_TYPE_KINETIC
@@ -28,6 +39,17 @@ function load_scan(path::AbstractString)
         else
             error("Unknown scan_type: $scan_type")
         end
+    catch err
+        if err isa KeyError
+            error("load_scan: '$path' is missing required dataset or attribute " *
+                  "'$(err.key)' — the file may be incomplete or damaged")
+        elseif err isa HDF5.API.H5Error
+            error("load_scan: HDF5 error while reading '$path' — " *
+                  "the file may be truncated or corrupt")
+        end
+        rethrow()
+    finally
+        close(fid)
     end
 end
 
