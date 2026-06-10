@@ -6,10 +6,15 @@
 # - missing `X_mean` falls back to legacy `signal` dataset, then to NaN-mean of sweeps
 
 """
-    load_scan(path) -> Loaded* result
+    load_scan(path) -> Loaded* result (plain data)
 
 Load a QPSDrive HDF5 scan file. Returns the appropriate Loaded type
-based on the `scan_type` root attribute.
+based on the `scan_type` root attribute, except `broadband`, which
+returns a `(time, wavelength, data)` NamedTuple.
+
+All results carry plain data only (Float64 vectors/matrices in
+NamedTuples). Analysis typing lives upstream: load through QPSTools to
+get OpticalSpectroscopy types (TATrace, TASpectrum, TAMatrix, SweepData).
 
 Raw HDF5 failures (truncated/corrupt file, missing datasets) are wrapped
 in informative `ErrorException`s naming the file, so callers can catch
@@ -65,7 +70,7 @@ function _load_kinetic(fid)
     sweeps = _read_sweep_data(dg)
     x_mean = _read_mean_signal(dg, sweeps)
 
-    trace = TATrace(time_ps, x_mean)
+    trace = TraceData((time_ps, x_mean))
     LoadedScanResult(
         trace,
         sweeps,
@@ -95,7 +100,7 @@ function _load_spectral(fid)
     sweeps = _read_sweep_data(dg)
     x_mean = _read_mean_signal(dg, sweeps)
 
-    spectrum = TASpectrum(wn, x_mean)
+    spectrum = SpectrumData((wn, x_mean))
     LoadedSpectralResult(
         spectrum,
         sweeps,
@@ -120,7 +125,7 @@ function _load_composite(fid)
             sweeps = _read_sweep_data(g)
             x_mean = _read_mean_signal(g, sweeps)
 
-            sp = TASpectrum(wn, x_mean)
+            sp = SpectrumData((wn, x_mean))
             params = Dict{String,Any}()
             if haskey(attributes(g), "delay_ps")
                 params["delay_ps"] = read(attributes(g)["delay_ps"])
@@ -152,7 +157,7 @@ function _load_composite(fid)
             sweeps = _read_sweep_data(tg)
             x_mean = _read_mean_signal(tg, sweeps)
 
-            tr = TATrace(t, x_mean)
+            tr = TraceData((t, x_mean))
             params = Dict{String,Any}()
             if haskey(attributes(tg), "wavelength_nm")
                 params["wavelength_nm"] = read(attributes(tg)["wavelength_nm"])
@@ -188,7 +193,7 @@ function _load_broadband(fid)
     time_ps = read(fid["data/time_ps"])
     wavelength_nm = read(fid["data/wavelength_nm"])
     signal = read(fid["data/signal"])
-    TAMatrix(time_ps, wavelength_nm, signal)
+    BroadbandData((time_ps, wavelength_nm, signal))
 end
 
 function _load_noise(fid)

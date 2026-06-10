@@ -12,7 +12,7 @@ wn_to_wl(wavenumber_cm) = 1e7 / wavenumber_cm
 # ─── NaN-safe statistics for sweep matrices ─────────────────────────────────
 
 # Mean across columns (sweeps) at each row (point), ignoring NaN.
-function _nanmean(m::Matrix{Float64})
+function _nanmean(m::AbstractMatrix{<:Real})
     n = size(m, 1)
     result = zeros(n)
     for i in 1:n
@@ -23,7 +23,7 @@ function _nanmean(m::Matrix{Float64})
 end
 
 # Std across columns at each row, ignoring NaN. Returns 0.0 for rows with <2 finite values.
-function _nanstd(m::Matrix{Float64})
+function _nanstd(m::AbstractMatrix{<:Real})
     n = size(m, 1)
     result = zeros(n)
     for i in 1:n
@@ -121,16 +121,18 @@ end
 # ─── Per-sweep raw data (write + read) ──────────────────────────────────────
 
 # Write per-sweep multi-channel data + computed statistics under `data/`.
-function _write_sweep_data!(dg, sweeps::SweepData)
+# Duck-typed: accepts anything with X/Y/DC matrix fields (the reader's
+# (X, Y, DC) NamedTuple, OpticalSpectroscopy.SweepData from QPSDrive, ...).
+function _write_sweep_data!(dg, sweeps)
     n_sweeps = size(sweeps.X, 2)
 
     sg = create_group(dg, "sweeps")
     for j in 1:n_sweeps
         label = lpad(j, 3, '0')
         sweep_g = create_group(sg, label)
-        sweep_g["X"] = sweeps.X[:, j]
-        sweep_g["Y"] = sweeps.Y[:, j]
-        sweep_g["DC"] = sweeps.DC[:, j]
+        sweep_g["X"] = collect(Float64, sweeps.X[:, j])
+        sweep_g["Y"] = collect(Float64, sweeps.Y[:, j])
+        sweep_g["DC"] = collect(Float64, sweeps.DC[:, j])
     end
 
     dg["X_mean"] = _nanmean(sweeps.X)
@@ -139,8 +141,9 @@ function _write_sweep_data!(dg, sweeps::SweepData)
     dg["DC_mean"] = _nanmean(sweeps.DC)
 end
 
-# Read per-sweep data from `data/sweeps/`. Returns SweepData or nothing
-# if the group is absent (legacy file without per-sweep data).
+# Read per-sweep data from `data/sweeps/`. Returns an (X, Y, DC)
+# NamedTuple of Matrix{Float64}, or nothing if the group is absent
+# (legacy file without per-sweep data).
 function _read_sweep_data(dg)
     haskey(dg, "sweeps") || return nothing
     sg = dg["sweeps"]
@@ -162,12 +165,12 @@ function _read_sweep_data(dg)
         DC[:, j] = read(sweep_g["DC"])
     end
 
-    return SweepData(X, Y, DC)
+    return SweepArrays((X, Y, DC))
 end
 
 # Pick the mean signal for a `data/` group, preferring `X_mean` if available,
 # falling back to per-sweep average, then legacy `signal` dataset, then bare `X_mean`.
-function _read_mean_signal(dg, sweeps::Union{SweepData,Nothing})
+function _read_mean_signal(dg, sweeps::Union{SweepArrays,Nothing})
     if sweeps !== nothing
         return haskey(dg, "X_mean") ? read(dg["X_mean"]) : _nanmean(sweeps.X)
     elseif haskey(dg, "signal")

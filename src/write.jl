@@ -7,11 +7,16 @@
 """
     save_kinetic_scan(trace, path; kwargs...)
 
-Save a kinetic scan: a `TATrace` (mean signal vs delay) plus optional
+Save a kinetic scan: `trace` (mean signal vs delay) plus optional
 per-sweep raw data, instrument state, and scan parameters.
 
+`trace` is duck-typed: any object with `time` and `signal` vector fields
+works (a `(time, signal)` NamedTuple, `OpticalSpectroscopy.TATrace`, ...).
+
 # Keyword arguments
-- `sweeps::Union{SweepData,Nothing}` — per-sweep X/Y/DC matrices
+- `sweeps` — per-sweep X/Y/DC matrices (any object with `X`/`Y`/`DC`
+  matrix fields, e.g. an `(X, Y, DC)` NamedTuple or
+  `OpticalSpectroscopy.SweepData`), or `nothing`
 - `scan_params::Dict{String,Any}` — averages, settle_time_s, accumulations, metadata
 - `instrument_state::Dict{String,Any}` — per-instrument snapshot dicts
 - `description::AbstractString` — short scan label
@@ -19,8 +24,8 @@ per-sweep raw data, instrument state, and scan parameters.
 - `timestamp::DateTime` — scan start (defaults to `now()`)
 - `duration_seconds::Real` — elapsed wall time
 """
-function save_kinetic_scan(trace::TATrace, path::AbstractString;
-                           sweeps::Union{SweepData,Nothing} = nothing,
+function save_kinetic_scan(trace, path::AbstractString;
+                           sweeps = nothing,
                            scan_params::Dict{String,Any} = Dict{String,Any}(),
                            instrument_state::Dict{String,Any} = Dict{String,Any}(),
                            description::AbstractString = "",
@@ -34,7 +39,7 @@ function save_kinetic_scan(trace::TATrace, path::AbstractString;
         _write_instrument_state!(fid, instrument_state)
         _write_scan_params!(fid, scan_params)
         dg = create_group(fid, "data")
-        dg["time_ps"] = trace.time
+        dg["time_ps"] = convert(Vector{Float64}, trace.time)
         if sweeps === nothing
             # No per-sweep data; persist the mean signal so the reader has
             # something to deliver. The trace's signal IS the mean already.
@@ -50,14 +55,19 @@ end
 """
     save_spectral_scan(spectrum, wavelengths_nm, path; kwargs...)
 
-Save a spectral scan: a `TASpectrum` (signal vs wavenumber) plus its
+Save a spectral scan: `spectrum` (signal vs wavenumber) plus its
 companion `wavelengths_nm` axis, optional per-sweep raw data, and metadata.
 The on-disk canonical axis is wavelength_nm; the wavenumber axis is
 derived from it on read.
+
+`spectrum` is duck-typed: any object with `wavenumber` and `signal`
+vector fields works (a `(wavenumber, signal)` NamedTuple,
+`OpticalSpectroscopy.TASpectrum`, ...). `sweeps` as in
+[`save_kinetic_scan`](@ref).
 """
-function save_spectral_scan(spectrum::TASpectrum, wavelengths_nm::AbstractVector{<:Real},
+function save_spectral_scan(spectrum, wavelengths_nm::AbstractVector{<:Real},
                             path::AbstractString;
-                            sweeps::Union{SweepData,Nothing} = nothing,
+                            sweeps = nothing,
                             scan_params::Dict{String,Any} = Dict{String,Any}(),
                             instrument_state::Dict{String,Any} = Dict{String,Any}(),
                             description::AbstractString = "",
@@ -85,9 +95,12 @@ end
 """
     save_broadband_scan(matrix, path; kwargs...)
 
-Save a broadband TA matrix (`TAMatrix`, time × wavelength_nm).
+Save a broadband TA matrix (time × wavelength_nm). `matrix` is
+duck-typed: any object with `time`/`wavelength` vector fields and a
+`data` matrix field works (a `(time, wavelength, data)` NamedTuple,
+`OpticalSpectroscopy.TAMatrix`, ...).
 """
-function save_broadband_scan(matrix::TAMatrix, path::AbstractString;
+function save_broadband_scan(matrix, path::AbstractString;
                              instrument_state::Dict{String,Any} = Dict{String,Any}(),
                              metadata::Dict{String,Any} = Dict{String,Any}(),
                              description::AbstractString = "",
@@ -106,9 +119,9 @@ function save_broadband_scan(matrix::TAMatrix, path::AbstractString;
             end
         end
         g = create_group(fid, "data")
-        g["time_ps"] = matrix.time
-        g["wavelength_nm"] = matrix.wavelength
-        g["signal"] = matrix.data
+        g["time_ps"] = convert(Vector{Float64}, matrix.time)
+        g["wavelength_nm"] = convert(Vector{Float64}, matrix.wavelength)
+        g["signal"] = convert(Matrix{Float64}, matrix.data)
     end
     mv(tmp, path; force=true)
     return path
@@ -118,8 +131,8 @@ end
     save_noise_scan(path; kwargs...)
 
 Save a noise characterization result. Takes the raw vectors and statistics
-dict directly — there's no OpticalSpectroscopy type for this since it's
-not a spectroscopy product.
+dict directly — noise characterization has no dedicated container type
+since it's not a spectroscopy product.
 
 # Keyword arguments
 - `time_constants::Vector{Float64}`
@@ -175,14 +188,17 @@ Save a composite scan: N spectra and M kinetic traces sharing one root
 description/comment/instrument_state.
 
 `spectra` is a vector of NamedTuples with required fields
-`(spectrum::TASpectrum, wavelengths::Vector{Float64}, sweeps::Union{SweepData,Nothing},
+`(spectrum, wavelengths::Vector{Float64}, sweeps,
 description::String, comment::String, timestamp::DateTime, duration_seconds::Float64)`
-and optional `delay_ps::Float64`.
+and optional `delay_ps::Float64`. `spectrum` needs `wavenumber`/`signal`
+vector fields; `sweeps` needs `X`/`Y`/`DC` matrix fields or is `nothing`
+(duck-typed as in [`save_spectral_scan`](@ref)).
 
 `kinetics` is a vector of NamedTuples with required fields
-`(trace::TATrace, sweeps::Union{SweepData,Nothing}, description::String,
+`(trace, sweeps, description::String,
 comment::String, timestamp::DateTime, duration_seconds::Float64)`
-and optional `wavelength_nm::Float64`.
+and optional `wavelength_nm::Float64`. `trace` needs `time`/`signal`
+vector fields (duck-typed as in [`save_kinetic_scan`](@ref)).
 
 Either kwarg may be omitted, but at least one sub-scan must be supplied;
 passing both groups empty is an error (there would be nothing to save).
