@@ -9,6 +9,10 @@ This document describes what QPSScanFormat.jl actually writes and reads
 canonical: QPSDrive writes through `save_*_scan` and QPSLab/QPSTools read
 through `load_scan`, so the code and this spec are kept in lockstep.
 
+`Loaded*` results returned by `load_scan` are plain data (Float64
+vectors/matrices in NamedTuples); analysis typing lives upstream, where
+QPSTools wraps the same results in OpticalSpectroscopy types.
+
 ## Design Principles
 
 1. **Store raw measurements, defer analysis.** Per-sweep X and Y from the
@@ -55,8 +59,9 @@ Legacy files with `scan_type = "spectral"` are accepted on read and treated
 as `spectrum`.
 
 `load_scan` returns, respectively: `LoadedScanResult`, `LoadedSpectralResult`,
-`LoadedCompositeResult`, a bare `TAMatrix` (broadband metadata is stored on
-disk but not currently surfaced by the reader), and `LoadedNoiseResult`.
+`LoadedCompositeResult`, a bare `(time, wavelength, data)` NamedTuple
+(broadband metadata is stored on disk but not currently surfaced by the
+reader), and `LoadedNoiseResult`.
 
 ## Root Attributes (all scan types)
 
@@ -186,8 +191,8 @@ h5py) report the dimensions reversed (`[M, N]`).
 
 Broadband files write `instrument_state/` only when non-empty, and `scan/`
 only as `scan/metadata` (when a metadata dict is supplied). The reader
-currently returns only the `TAMatrix`; the stored attributes are not yet
-surfaced through `load_scan`.
+currently returns only the `(time, wavelength, data)` matrix payload; the
+stored attributes are not yet surfaced through `load_scan`.
 
 ### `composite`
 
