@@ -233,7 +233,13 @@ function save_composite_scan(path::AbstractString;
                 label = "trace_$(lpad(j, 3, '0'))"
                 tg = create_group(kg, label)
                 tg["time_ps"] = collect(Float64, tr.trace.time)
-                tr.sweeps === nothing || _write_sweep_data!(tg, tr.sweeps)
+                if tr.sweeps === nothing
+                    # No per-sweep data; persist the mean signal so the reader
+                    # has something to deliver (same contract as save_kinetic_scan).
+                    tg["X_mean"] = collect(Float64, tr.trace.signal)
+                else
+                    _write_sweep_data!(tg, tr.sweeps)
+                end
                 attributes(tg)[ATTR_DESCRIPTION] = String(tr.description)
                 attributes(tg)[ATTR_COMMENT] = String(tr.comment)
                 attributes(tg)[ATTR_TIMESTAMP] = string(tr.timestamp)

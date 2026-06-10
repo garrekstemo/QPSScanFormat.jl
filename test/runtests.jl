@@ -196,6 +196,30 @@ end
         end
     end
 
+    @testset "composite kinetics without sweeps round-trip" begin
+        trace = _mock_trace(8)
+        ts = now()
+
+        mktempdir() do dir
+            path = joinpath(dir, "composite_nosweeps.h5")
+            save_composite_scan(path;
+                spectra = NamedTuple[],
+                kinetics = [
+                    (trace=trace, sweeps=nothing,
+                     description="no sweeps", comment="", timestamp=ts,
+                     duration_seconds=5.0, wavelength_nm=2100.0),
+                ],
+                description = "kinetics only, no sweeps",
+            )
+
+            r = load_scan(path)
+            @test r isa LoadedCompositeResult
+            @test length(r.traces) == 1
+            @test r.traces[1].trace.time ≈ trace.time
+            @test r.traces[1].trace.signal ≈ trace.signal
+        end
+    end
+
     @testset "legacy scan_type='spectral' reads as spectrum" begin
         # Hand-build a file with the legacy attribute value
         spec, wl = _mock_spectrum(5)
