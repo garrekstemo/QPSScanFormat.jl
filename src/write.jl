@@ -11,7 +11,7 @@ Save a kinetic scan: `trace` (mean signal vs delay) plus optional
 per-sweep raw data, instrument state, and scan parameters.
 
 `trace` is duck-typed: any object with `time` and `signal` vector fields
-works (a `(time, signal)` NamedTuple, `OpticalSpectroscopy.TATrace`, ...).
+works (a `(time, signal)` NamedTuple, `OpticalSpectroscopy.KineticTrace`, ...).
 
 # Keyword arguments
 - `sweeps` — per-sweep X/Y/DC matrices (any object with `X`/`Y`/`DC`
@@ -62,7 +62,7 @@ derived from it on read.
 
 `spectrum` is duck-typed: any object with `wavenumber` and `signal`
 vector fields works (a `(wavenumber, signal)` NamedTuple,
-`OpticalSpectroscopy.TASpectrum`, ...). `sweeps` as in
+`OpticalSpectroscopy.Spectrum`, ...). `sweeps` as in
 [`save_kinetic_scan`](@ref).
 """
 function save_spectral_scan(spectrum, wavelengths_nm::AbstractVector{<:Real},
@@ -98,7 +98,7 @@ end
 Save a broadband TA matrix (time × wavelength_nm). `matrix` is
 duck-typed: any object with `time`/`wavelength` vector fields and a
 `data` matrix field works (a `(time, wavelength, data)` NamedTuple,
-`OpticalSpectroscopy.TAMatrix`, ...).
+`OpticalSpectroscopy.TimeResolvedMatrix`, ...).
 """
 function save_broadband_scan(matrix, path::AbstractString;
                              instrument_state::Dict{String,Any} = Dict{String,Any}(),

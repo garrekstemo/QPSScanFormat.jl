@@ -19,7 +19,7 @@ lab-only or analysis dependencies.
 NamedTuples (`trace = (time, signal)`, `spectrum = (wavenumber, signal)`,
 `sweeps = (X, Y, DC)`; broadband loads as a `(time, wavelength, data)`
 NamedTuple). Analysis typing lives upstream — load through QPSTools to get
-OpticalSpectroscopy types (`TATrace`, `TASpectrum`, `TAMatrix`, `SweepData`)
+OpticalSpectroscopy types (`KineticTrace`, `Spectrum`, `TimeResolvedMatrix`, `SweepData`)
 wrapped in the same `Loaded*` structs. Writers are duck-typed on the same
 field names, so producers may pass either NamedTuples or
 OpticalSpectroscopy containers.
@@ -48,6 +48,6 @@ result.trace.signal   # Vector{Float64}
 
 Analysts working in the REPL should prefer `using QPSTools` and its
 `load_scan`, which returns the same `Loaded*` results carrying
-`TATrace`/`TASpectrum` objects ready for fitting and plotting.
+`KineticTrace`/`Spectrum` objects ready for fitting and plotting.
 
 See `docs/hdf5-format.md` for the on-disk schema.

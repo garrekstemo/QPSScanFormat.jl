@@ -1,11 +1,12 @@
 using Test
+using Aqua
 using Dates
 using HDF5
 using QPSScanFormat
 
 # Helpers for building fixtures. Writers are duck-typed: any object with
 # the right fields works (NamedTuples here; OpticalSpectroscopy's
-# TATrace/TASpectrum/TAMatrix/SweepData in QPSDrive).
+# KineticTrace/Spectrum/TimeResolvedMatrix/SweepData in QPSDrive).
 function _mock_trace(npts=10)
     time_ps = collect(range(-1.0, 5.0; length=npts))
     signal = sin.(time_ps)
@@ -27,6 +28,10 @@ function _mock_sweeps(n_points=10, n_sweeps=3)
 end
 
 @testset "QPSScanFormat" begin
+
+    @testset "Aqua quality assurance" begin
+        Aqua.test_all(QPSScanFormat)
+    end
 
     @testset "schema constants" begin
         @test QPSScanFormat.FORMAT_TAG == "QPSDrive/1.0"
