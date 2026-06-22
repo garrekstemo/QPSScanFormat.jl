@@ -60,9 +60,10 @@ companion `wavelengths_nm` axis, optional per-sweep raw data, and metadata.
 The on-disk canonical axis is wavelength_nm; the wavenumber axis is
 derived from it on read.
 
-`spectrum` is duck-typed: any object with `wavenumber` and `signal`
-vector fields works (a `(wavenumber, signal)` NamedTuple,
-`OpticalSpectroscopy.Spectrum`, ...). `sweeps` as in
+`spectrum` is duck-typed: any object with `wavenumber` and `signal` vector
+fields works, e.g. a `(wavenumber, signal)` NamedTuple. (An
+`OpticalSpectroscopy.Spectrum` stores `x`/`y`, not `wavenumber`/`signal`, so
+pass `(wavenumber = xdata(s), signal = ydata(s))`.) `sweeps` as in
 [`save_kinetic_scan`](@ref).
 """
 function save_spectral_scan(spectrum, wavelengths_nm::AbstractVector{<:Real},
