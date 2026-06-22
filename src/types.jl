@@ -4,7 +4,7 @@
 # NamedTuples — plus scan-output metadata. QPSScanFormat is the format
 # layer: it knows the on-disk schema, not the analysis vocabulary.
 # Analysis typing lives upstream: QPSTools wraps these results into
-# OpticalSpectroscopy types (TATrace, TASpectrum, TAMatrix, SweepData)
+# OpticalSpectroscopy types (KineticTrace, Spectrum, TimeResolvedMatrix, SweepData)
 # for students; QPSDrive/QPSConsole consume the plain fields directly.
 #
 # The structs are parametric so an upstream wrapper can rebuild them with
@@ -35,7 +35,7 @@ Result of `load_scan` for a kinetic scan file (`scan_type = "kinetic"`).
 
 The payload fields are parametric: QPSScanFormat's own reader fills them
 with plain NamedTuples; QPSTools rebuilds the same struct with
-OpticalSpectroscopy types (`TATrace`, `SweepData`) for analysis users.
+OpticalSpectroscopy types (`KineticTrace`, `SweepData`) for analysis users.
 """
 struct LoadedScanResult{TR, SW}
     trace::TR
@@ -63,7 +63,7 @@ legacy `"spectral"` accepted). The canonical on-disk axis is
 - plus the standard metadata fields (see [`LoadedScanResult`](@ref))
 
 Parametric payloads for the same reason as [`LoadedScanResult`](@ref):
-QPSTools rebuilds with `TASpectrum`/`SweepData`.
+QPSTools rebuilds with `Spectrum`/`SweepData`.
 """
 struct LoadedSpectralResult{SP, SW}
     spectrum::SP

@@ -14,7 +14,7 @@ returns a `(time, wavelength, data)` NamedTuple.
 
 All results carry plain data only (Float64 vectors/matrices in
 NamedTuples). Analysis typing lives upstream: load through QPSTools to
-get OpticalSpectroscopy types (TATrace, TASpectrum, TAMatrix, SweepData).
+get OpticalSpectroscopy types (KineticTrace, Spectrum, TimeResolvedMatrix, SweepData).
 
 Raw HDF5 failures (truncated/corrupt file, missing datasets) are wrapped
 in informative `ErrorException`s naming the file, so callers can catch

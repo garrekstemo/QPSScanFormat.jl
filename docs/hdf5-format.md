@@ -16,11 +16,15 @@ QPSTools wraps the same results in OpticalSpectroscopy types.
 ## Design Principles
 
 1. **Store raw measurements, defer analysis.** Per-sweep X and Y from the
-   lock-in are the irreplaceable data. Derived quantities (R, theta, delta_OD,
-   wavenumber) are computed by downstream tools (QPSTools, QPSLab).
+   lock-in are the irreplaceable data. Analysis quantities (R, theta, delta_OD)
+   are computed by downstream tools (QPSTools, QPSLab).
 
-2. **Wavelength is the canonical spectral axis.** The monochromator sets
-   wavelength in nm. Wavenumber is a derived quantity with non-uniform spacing.
+2. **Wavelength is the canonical *stored* spectral axis.** The monochromator sets
+   wavelength in nm, and only `wavelength_nm` is written to disk. Wavenumber is a
+   trivial reciprocal (`10⁷ / λ_nm`, non-uniform spacing) — not stored, but the
+   reader computes it on read and surfaces the spectrum payload as a
+   `(wavenumber, signal)` NamedTuple for convenience. (Legacy files that stored
+   `wavenumber_cm` instead are read back to wavelength symmetrically.)
 
 3. **Per-sweep storage enables post-hoc quality control.** Outlier rejection,
    drift detection, and proper error bars require individual sweep data.
