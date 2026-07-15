@@ -10,9 +10,8 @@ In scope: the HDF5 schema (`docs/hdf5-format.md`), `load_scan` and the typed
 `Loaded*` results, the `save_*_scan` writers, in-place metadata editors
 (`update_scan_*!`), and schema constants.
 
-**No analysis dependencies.** The OpticalSpectroscopy dependency was dropped
-(`refactor!: drop the OpticalSpectroscopy dependency`): readers return **plain
-data** — `(time, signal)`, `(wavenumber, signal)`, `(X, Y, DC)` NamedTuples and a
+**No analysis dependencies.** The OpticalSpectroscopy dependency was
+deliberately dropped: readers return **plain data** — `(time, signal)`, `(wavenumber, signal)`, `(X, Y, DC)` NamedTuples and a
 bare `(time, wavelength, data)` broadband NamedTuple. The analysis types
 (`KineticTrace`, `Spectrum`, `TimeResolvedMatrix`, `SweepData`) are attached one
 layer up by QPSTools' own `load_scan`, never here.
@@ -39,6 +38,6 @@ dependency re-couples the format layer to the analysis layer.
 
 ## Development
 
-- Version 0.1.0, not yet registered (URL-pinned by QPSTools via `[sources]`).
+- Not yet registered (URL-pinned by QPSTools via `[sources]`).
 - Tests use synthetic in-memory fixtures and `mktempdir` round-trips — no local
-  file dependencies. Aqua runs in the suite.
+  file dependencies.
